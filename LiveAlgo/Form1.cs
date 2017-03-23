@@ -35,23 +35,28 @@ namespace LiveAlgo
             InitializeComponent();
             stiApp.SetModeXML(true);
             stiEvents.SetOrderEventsAsStructs(true);
-            stiEvents.OnSTIOrderUpdateXML += new SterlingLib._ISTIEventsEvents_OnSTIOrderUpdateXMLEventHandler(OnSTIOrderUpdateXML);
-            stiPos.OnSTIPositionUpdateXML += new SterlingLib._ISTIPositionEvents_OnSTIPositionUpdateXMLEventHandler(OnSTIPositionUpdateXML);
+            //stiEvents.OnSTIOrderUpdateXML += new SterlingLib._ISTIEventsEvents_OnSTIOrderUpdateXMLEventHandler(OnSTIOrderUpdateXML);
+            //stiPos.OnSTIPositionUpdateXML += new SterlingLib._ISTIPositionEvents_OnSTIPositionUpdateXMLEventHandler(OnSTIPositionUpdateXML);
+
+            //Set globals from settings file
+            Globals.account = Properties.Settings.Default.SterlingAccount;
+            textBox1.Text = Globals.account;
+
         }
 
-        private void OnSTIOrderUpdateXML(ref string strOrder)
+        /*private void OnSTIOrderUpdateXML(ref string strOrder)
         {
             XmlSerializer xs = new XmlSerializer(typeof(SterlingLib.structSTIOrderUpdate));
             SterlingLib.structSTIOrderUpdate structOrder = (SterlingLib.structSTIOrderUpdate)xs.Deserialize(new StringReader(strOrder));
         }
-
+        
         private void OnSTIPositionUpdateXML(ref string strPosition)
         {
             XmlSerializer xs = new XmlSerializer(typeof(SterlingLib.structSTIPositionUpdate));
             SterlingLib.structSTIPositionUpdate structPosition = (SterlingLib.structSTIPositionUpdate)xs.Deserialize(new StringReader(strPosition));
             int netPos = (structPosition.nSharesBot - structPosition.nSharesSld);
             //AddListBoxItem("Postion (XML):  " + structPosition.bstrSym + "  Position =  " + netPos);
-        }
+        }*/
 
 
         private void button1_Click(object sender, EventArgs e)
@@ -113,31 +118,6 @@ namespace LiveAlgo
         {
             AlgoForm af = new AlgoForm();
             af.Show();
-
-
-            /*
-            SterlingLib.STIOrder stiOrder = new SterlingLib.STIOrder();
-            stiOrder.Symbol = "XOP";
-            stiOrder.Account = Globals.account;
-            stiOrder.Side = "B";
-            stiOrder.Quantity = 100;
-            stiOrder.Tif = "D"; //day order
-            stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
-            stiOrder.LmtPrice = 38.00;
-            stiOrder.Destination = "BATS";
-            stiOrder.ClOrderID = Guid.NewGuid().ToString();
-
-            int orderStatus = stiOrder.SubmitOrder();
-            if (orderStatus != 0)
-            {
-                MessageBox.Show("Order Error: " + orderStatus.ToString());
-            }
-            else
-            {
-                //Order Success
-                testAlgo.ordersBelow.Add(stiOrder);
-            }
-            */
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -155,6 +135,23 @@ namespace LiveAlgo
             int order = stiOrder.SubmitOrder();
 
 
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            if (button4.Text == "Change Sterling Account")
+            {
+                textBox1.Enabled = true;
+                button4.Text = "Set Account";
+            }
+            else if (button4.Text == "Set Account")
+            {
+                Properties.Settings.Default.SterlingAccount = textBox1.Text;
+                Globals.account = textBox1.Text;
+                MessageBox.Show("Account Set");
+                button4.Text = "Change Sterling Account";
+                textBox1.Enabled = false;
+            }
         }
     }
 }

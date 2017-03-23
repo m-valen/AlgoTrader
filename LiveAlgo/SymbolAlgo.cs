@@ -54,37 +54,21 @@ namespace LiveAlgo
 
         public List<SterlingLib.ISTIOrder> ordersBelow = new List<SterlingLib.ISTIOrder>();
 
+        public List<SterlingLib.ISTIOrder> filledOrders = new List<SterlingLib.ISTIOrder>();
+
         public decimal midPrice;     //OnChange, update orders
 
 
-        private SterlingLib.STIApp stiApp = new SterlingLib.STIApp();
-        private SterlingLib.STIEvents stiEvents = new SterlingLib.STIEvents();
-        private SterlingLib.STIOrder stiOrder = new SterlingLib.STIOrder();
-        private SterlingLib.STIPosition stiPos = new SterlingLib.STIPosition();
-        private SterlingLib.STIQuote stiQuote = new SterlingLib.STIQuote();
+        
 
         
 
         public SymbolAlgo()
         {
-            stiApp.SetModeXML(true);
-            stiEvents.SetOrderEventsAsStructs(true);
-            stiEvents.OnSTIOrderUpdateXML += new SterlingLib._ISTIEventsEvents_OnSTIOrderUpdateXMLEventHandler(OnSTIOrderUpdateXML);
+            
         }
 
-        public void OnSTIOrderUpdateXML(ref string strOrder)
-        {
-            XmlSerializer xs = new XmlSerializer(typeof(SterlingLib.structSTIOrderUpdate));
-            SterlingLib.structSTIOrderUpdate structOrder = (SterlingLib.structSTIOrderUpdate)xs.Deserialize(new StringReader(strOrder));
-            if (Convert.ToDecimal(structOrder.fLmtPrice) > midPrice)
-            {
-                buyFills++;
-            }
-            else if (Convert.ToDecimal(structOrder.fLmtPrice) < midPrice)
-            {
-                sellFills++;
-            }
-        }
+        
 
         public void SetMidPrice(int price)
         {
