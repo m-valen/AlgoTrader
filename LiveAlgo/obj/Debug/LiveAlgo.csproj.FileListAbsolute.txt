@@ -1,0 +1,12 @@
+C:\Users\Manifold\AppData\Local\Temporary Projects\LiveAlgo\bin\Debug\LiveAlgo.exe.config
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\Debug\LiveAlgo.exe.config
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\Debug\LiveAlgo.exe
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\Debug\LiveAlgo.pdb
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\Debug\System.Data.SQLite.dll
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.csprojResolveAssemblyReference.cache
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.Form1.resources
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.Properties.Resources.resources
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.csproj.GenerateResource.Cache
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.exe
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.pdb
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\Debug\Interop.SterlingLib.dll
