@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Xml.Serialization;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Timers;
 
 namespace LiveAlgo
 {
@@ -36,6 +37,8 @@ namespace LiveAlgo
             stiApp.SetModeXML(true);
             stiEvents.SetOrderEventsAsStructs(true);
             stiEvents.OnSTIOrderUpdateXML += new SterlingLib._ISTIEventsEvents_OnSTIOrderUpdateXMLEventHandler(OnSTIOrderUpdateXML);
+
+            dateTimePicker1.Value = DateTime.Now;
 
         }
 
@@ -120,6 +123,17 @@ namespace LiveAlgo
                             testAlgo.ordersAbove.Insert(0, stiOrder);
                         }
                     }
+                    foreach (SterlingLib.ISTIOrder order in testAlgo.ordersAbove)
+                    {
+                        Debug.WriteLine(order.LmtPrice);
+                    }
+                    foreach (SterlingLib.ISTIOrder order in testAlgo.ordersBelow)
+                    {
+                        Debug.WriteLine(order.LmtPrice);
+                    }
+                    Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
+                    Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+                    Debug.WriteLine("--------------");
 
                 }
                 else if (Convert.ToDecimal(structOrder.fLmtPrice) > testAlgo.midPrice)
@@ -188,11 +202,24 @@ namespace LiveAlgo
                         else
                         {
                             //Add to appropriate list
-                            testAlgo.ordersBelow.Add(stiOrder);
+                            testAlgo.ordersBelow.Insert(0, stiOrder);
                         }
                     }
+                    Debug.WriteLine("Mid Price: " + testAlgo.midPrice);
+                    Debug.WriteLine("--------------");
+                    foreach (SterlingLib.ISTIOrder order in testAlgo.ordersAbove)
+                    {
+                        Debug.WriteLine(order.LmtPrice);
+                    }
+                    foreach (SterlingLib.ISTIOrder order in testAlgo.ordersBelow)
+                    {
+                        Debug.WriteLine(order.LmtPrice);
+                    }
+                    Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
+                    Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+                    Debug.WriteLine("--------------");
+                    Debug.WriteLine("--------------");
 
-                    
                 }
             }
 
@@ -203,20 +230,26 @@ namespace LiveAlgo
 
         private void button1_Click(object sender, EventArgs e)
         {
-            testAlgo.status = "Running";
+            if (!(testAlgo.status == "Running")) { 
+                testAlgo.status = "Running";
+                label10.Text = "Running";
+                label10.Refresh();
 
-            decimal startPrice = Convert.ToDecimal(numericUpDown1.Value);  //Also midprice
+                textBox1.Enabled = false;
 
-            testAlgo.symbol = textBox1.Text.ToUpper();
-            testAlgo.incrementPrice = numericUpDown8.Value;
-            testAlgo.incrementSize = Convert.ToInt32(numericUpDown10.Value);
+                decimal startPrice = Convert.ToDecimal(numericUpDown1.Value);  //Also midprice
 
-            testAlgo.Start(startPrice);
+                testAlgo.symbol = textBox1.Text.ToUpper();
+                testAlgo.incrementPrice = numericUpDown8.Value;
+                testAlgo.incrementSize = Convert.ToInt32(numericUpDown10.Value);
 
-            Thread.Sleep(200);
+                testAlgo.Start(startPrice);
 
-            Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
-            Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+                Thread.Sleep(200);
+
+                Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
+                Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -235,6 +268,65 @@ namespace LiveAlgo
             }
 
             testAlgo.status = "Stopped";
+            label10.Text = "Stopped";
+            label10.Refresh();
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            //Get Date
+            DateTime runDate = dateTimePicker1.Value;
+            DateTime startTime = dateTimePicker6.Value;
+            DateTime endTime = dateTimePicker7.Value;
+
+            DateTime startDateTime = new DateTime(runDate.Year, runDate.Month, runDate.Day, startTime.Hour, startTime.Minute, startTime.Second);
+            DateTime endDateTime = new DateTime(runDate.Year, runDate.Month, runDate.Day, endTime.Hour, endTime.Minute, endTime.Second);
+
+            System.Timers.Timer timeUntilStart = new System.Timers.Timer();
+
+            
+
+            TimeSpan ts = startDateTime - DateTime.Now;
+            if (ts > new TimeSpan(0)) timeUntilStart.Interval = ts.TotalMilliseconds;
+            else { MessageBox.Show("Start Time must be later than current time."); return; }
+            textBox1.Enabled = false;
+
+            ElapsedEventHandler handler = new ElapsedEventHandler(delegate (object o, ElapsedEventArgs f)
+            {
+                if (testAlgo.status == "Queued")
+                {
+                    testAlgo.status = "Running";
+                    if (this.label10.InvokeRequired) {
+                        this.label10.BeginInvoke((MethodInvoker)delegate () { this.label10.Text = "Running"; this.label10.Refresh(); });
+                    }
+                    else
+                    {
+                        label10.Text = "Running";
+                        label10.Refresh();
+                    }
+                    
+
+                    decimal startPrice = Convert.ToDecimal(numericUpDown1.Value);  //Also midprice
+
+                    testAlgo.symbol = textBox1.Text.ToUpper();
+                    testAlgo.incrementPrice = numericUpDown8.Value;
+                    testAlgo.incrementSize = Convert.ToInt32(numericUpDown10.Value);
+
+                    testAlgo.Start(startPrice);
+
+                    Thread.Sleep(200);
+
+                    Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
+                    Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+                }
+            });
+            timeUntilStart.Elapsed += handler;
+            timeUntilStart.Start();
+
+            testAlgo.status = "Queued";
+            label10.Text = "Queued";
+            label10.Refresh();
 
         }
     }
