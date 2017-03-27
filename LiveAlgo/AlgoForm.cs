@@ -31,6 +31,15 @@ namespace LiveAlgo
 
         private SymbolAlgo testAlgo = new SymbolAlgo();
 
+        SQLiteConnection sqlite_conn;
+        SQLiteCommand sqlite_cmd;
+        SQLiteDataReader sqlite_datareader;
+
+       
+
+
+        
+
         public AlgoForm()
         {
             InitializeComponent();
@@ -39,6 +48,12 @@ namespace LiveAlgo
             stiEvents.OnSTIOrderUpdateXML += new SterlingLib._ISTIEventsEvents_OnSTIOrderUpdateXMLEventHandler(OnSTIOrderUpdateXML);
 
             dateTimePicker1.Value = DateTime.Now;
+
+            //Create DB connection
+            sqlite_conn = new SQLiteConnection("Data Source=database.db;Version=3;New=True;Compress=True;");
+
+            //Open connection
+            sqlite_conn.Open();
 
         }
 
@@ -64,9 +79,17 @@ namespace LiveAlgo
                     {
                         testAlgo.midPrice = Convert.ToDecimal(structOrder.fLmtPrice);
 
+                        //UPDATE METRICS
+                        if (testAlgo.currentPosition < 0) // If short, Add to incrementPL
+                        {
+                            testAlgo.incrementPL += testAlgo.incrementPrice * testAlgo.incrementSize;
+                        }
+
+                        testAlgo.currentPosition += structOrder.nQuantity;  //Update position
+
                         //Move filled order to completed list, remove from active list
                         SterlingLib.ISTIOrder filledOrder = testAlgo.ordersAbove.Find(i => i.ClOrderID == structOrder.bstrClOrderId);
-                        testAlgo.ordersBelow.Remove(filledOrder);
+                        testAlgo.ordersBelow.RemoveAt(0);
                         testAlgo.filledOrders.Add(filledOrder);
 
                         //Insert new order below 5 orders away
@@ -90,7 +113,7 @@ namespace LiveAlgo
                         else
                         {
                             //Add to appropriate list
-                            testAlgo.ordersBelow.Insert(0, stiOrder);
+                            testAlgo.ordersBelow.Add(stiOrder);
                         }
 
                         //Cancel the "6th" order from opposite side order list
@@ -101,11 +124,19 @@ namespace LiveAlgo
 
                         //Place new order in opposite side order list
 
+                        int orderQuantity = testAlgo.incrementSize;
+
+                        //Autobalance check
+
+                        //If over long
+
+                        if (testAlgo.currentPosition >= testAlgo.autoBalance) orderQuantity = testAlgo.incrementSize * 2;
+
                         stiOrder = new SterlingLib.STIOrder();
                         stiOrder.Symbol = testAlgo.symbol;
                         stiOrder.Account = Globals.account;
                         stiOrder.Side = "S";
-                        stiOrder.Quantity = testAlgo.incrementSize;
+                        stiOrder.Quantity = orderQuantity;
                         stiOrder.Tif = "D"; //day order
                         stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
                         stiOrder.LmtPrice = Convert.ToDouble(testAlgo.midPrice + (testAlgo.incrementPrice));
@@ -122,6 +153,54 @@ namespace LiveAlgo
                             //Add to appropriate list
                             testAlgo.ordersAbove.Insert(0, stiOrder);
                         }
+
+                        //If over autobalance, check orders above and adjust sizes
+                        if (testAlgo.currentPosition >= testAlgo.autoBalance) { 
+
+                            int ifFilledPosition = testAlgo.currentPosition - testAlgo.ordersBelow[0].Quantity; 
+                            for (int i = 1; i < testAlgo.bracketedOrders; i++)
+                            {
+                                //Calculation
+                                if (ifFilledPosition < testAlgo.autoBalance)
+                                {
+                                    if (testAlgo.ordersAbove[i].Quantity == testAlgo.incrementSize * 2)  // Order should be reverted to regular increment size
+                                    {
+                                        //First cancel order
+                                        orderMaint.CancelOrder(Globals.account, 0, testAlgo.ordersAbove[i].ClOrderID, Guid.NewGuid().ToString());
+                                        //Then resubmit with base increment size
+                                        stiOrder = new SterlingLib.STIOrder();
+                                        stiOrder.Symbol = testAlgo.symbol;
+                                        stiOrder.Account = Globals.account;
+                                        stiOrder.Side = "S";
+                                        stiOrder.Quantity = testAlgo.incrementSize;
+                                        stiOrder.Tif = "D"; //day order
+                                        stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
+                                        stiOrder.LmtPrice = testAlgo.incrementSize;
+                                        stiOrder.Destination = "BATS";
+                                        stiOrder.ClOrderID = Guid.NewGuid().ToString();
+
+                                        //Remove cancelled order
+                                        testAlgo.ordersAbove.RemoveAt(i);
+
+                                        //Submit new order and add to list
+                                        orderStatus = stiOrder.SubmitOrder();
+                                        if (orderStatus != 0)
+                                        {
+                                            MessageBox.Show("Order Error: " + orderStatus.ToString());
+                                        }
+                                        else
+                                        {
+                                            //Add to appropriate list
+                                            testAlgo.ordersAbove.Insert(i, stiOrder);
+                                        }
+                                        break;  //Should only be one order to adjust
+                                    }
+                                }
+                                ifFilledPosition -= testAlgo.ordersAbove[i].Quantity;
+                            }
+                        }
+
+
                     }
                     foreach (SterlingLib.ISTIOrder order in testAlgo.ordersAbove)
                     {
@@ -133,6 +212,9 @@ namespace LiveAlgo
                     }
                     Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
                     Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+                    Debug.WriteLine("Current Position: " + testAlgo.currentPosition);
+                    Debug.WriteLine("Increment PL: " + testAlgo.incrementPL);
+                    Debug.WriteLine("--------------");
                     Debug.WriteLine("--------------");
 
                 }
@@ -146,9 +228,18 @@ namespace LiveAlgo
                     {
                         testAlgo.midPrice = Convert.ToDecimal(structOrder.fLmtPrice);
 
+                        //UPDATE METRICS
+                        if (testAlgo.currentPosition > 0) // If long, Add to incrementPL
+                        {
+                            testAlgo.incrementPL += testAlgo.incrementPrice * testAlgo.incrementSize;
+                        }
+                        testAlgo.currentPosition -= structOrder.nQuantity; //Update position
+
+
+
                         //Move filled order to completed list, remove from active list
                         SterlingLib.ISTIOrder filledOrder = testAlgo.ordersAbove.Find(i => i.ClOrderID == structOrder.bstrClOrderId);
-                        testAlgo.ordersAbove.Remove(filledOrder);
+                        testAlgo.ordersAbove.RemoveAt(0);
                         testAlgo.filledOrders.Add(filledOrder);
 
                         //Insert new order above 5 orders away
@@ -183,11 +274,20 @@ namespace LiveAlgo
 
                         //Place new order in opposite side order list
 
+                        //Autobalance check
+
+                        int orderQuantity = testAlgo.incrementSize;
+
+                        //If over short
+
+                        if (testAlgo.currentPosition <= -(testAlgo.autoBalance)) orderQuantity = testAlgo.incrementSize * 2;
+
+
                         stiOrder = new SterlingLib.STIOrder();
                         stiOrder.Symbol = testAlgo.symbol;
                         stiOrder.Account = Globals.account;
                         stiOrder.Side = "B";
-                        stiOrder.Quantity = testAlgo.incrementSize;
+                        stiOrder.Quantity = orderQuantity;
                         stiOrder.Tif = "D"; //day order
                         stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
                         stiOrder.LmtPrice = Convert.ToDouble(testAlgo.midPrice - (testAlgo.incrementPrice));
@@ -204,6 +304,55 @@ namespace LiveAlgo
                             //Add to appropriate list
                             testAlgo.ordersBelow.Insert(0, stiOrder);
                         }
+
+                        //If over autobalance, check orders above and adjust sizes
+                        if (testAlgo.currentPosition <= -(testAlgo.autoBalance))
+                        {
+
+                            int ifFilledPosition = testAlgo.currentPosition + testAlgo.ordersAbove[0].Quantity;
+
+                            for (int i = 1; i < testAlgo.bracketedOrders; i++)
+                            {
+                                //Calculation
+                                if (ifFilledPosition > -(testAlgo.autoBalance))
+                                {
+                                    if (testAlgo.ordersAbove[i].Quantity == testAlgo.incrementSize * 2)  // Order should be reverted to regular increment size
+                                    {
+                                        //First cancel order
+                                        orderMaint.CancelOrder(Globals.account, 0, testAlgo.ordersAbove[i].ClOrderID, Guid.NewGuid().ToString());
+                                        //Then resubmit with base increment size
+                                        stiOrder = new SterlingLib.STIOrder();
+                                        stiOrder.Symbol = testAlgo.symbol;
+                                        stiOrder.Account = Globals.account;
+                                        stiOrder.Side = "S";
+                                        stiOrder.Quantity = testAlgo.incrementSize;
+                                        stiOrder.Tif = "D"; //day order
+                                        stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
+                                        stiOrder.LmtPrice = testAlgo.incrementSize;
+                                        stiOrder.Destination = "BATS";
+                                        stiOrder.ClOrderID = Guid.NewGuid().ToString();
+
+                                        //Remove cancelled order
+                                        testAlgo.ordersAbove.RemoveAt(i);
+
+                                        //Submit new order and add to list
+                                        orderStatus = stiOrder.SubmitOrder();
+                                        if (orderStatus != 0)
+                                        {
+                                            MessageBox.Show("Order Error: " + orderStatus.ToString());
+                                        }
+                                        else
+                                        {
+                                            //Add to appropriate list
+                                            testAlgo.ordersAbove.Insert(i, stiOrder);
+                                        }
+                                        break;  //Should only be one order to adjust
+                                    }
+                                }
+                                ifFilledPosition += testAlgo.ordersAbove[i].Quantity;
+                            }
+                        }
+
                     }
                     Debug.WriteLine("Mid Price: " + testAlgo.midPrice);
                     Debug.WriteLine("--------------");
@@ -217,6 +366,8 @@ namespace LiveAlgo
                     }
                     Debug.WriteLine("Buy Fills: " + testAlgo.buyFills);
                     Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
+                    Debug.WriteLine("Current Position: " + testAlgo.currentPosition);
+                    Debug.WriteLine("Increment PL: " + testAlgo.incrementPL);
                     Debug.WriteLine("--------------");
                     Debug.WriteLine("--------------");
 
@@ -227,6 +378,31 @@ namespace LiveAlgo
 
         }
 
+        private void writeAlgoToDB()  //Requires symbol, status, startTime, endTime, bracketedOrders, incrementPrice, incrementSize, Autobalance, HardStopPL
+        {
+            sqlite_cmd = sqlite_conn.CreateCommand();
+
+            if (testAlgo.symbol != null && testAlgo.status != null && testAlgo.startTime != null && testAlgo.endTime != null && testAlgo.bracketedOrders != null && testAlgo.incrementPrice != null &&
+                testAlgo.incrementSize != null && testAlgo.autoBalance != null && testAlgo.hardStop != null) {
+                sqlite_cmd.CommandText = "INSERT INTO Algo (Symbol, Status, StartTime, EndTime, BracketedOrders, IncrementPrice, IncrementSize, Autobalance, HardStopPL) VALUES ('" + testAlgo.symbol +
+                    "','" + testAlgo.status + "','" + testAlgo.startTime.ToString("yyyy-MM-dd HH:MM:ss.ff") + "','" + testAlgo.endTime.ToString("yyyy-MM-dd HH:MM:ss.ff") + "','" + 
+                    testAlgo.bracketedOrders + "','" + testAlgo.incrementPrice + "','" + testAlgo.incrementSize + "','" + testAlgo.autoBalance + "','" + 
+                    testAlgo.hardStop+ "');";
+                //sqlite_cmd.CommandText = "INSERT INTO 'Algo' (Symbol, Status) VALUES ('" + testAlgo.symbol + "','" + testAlgo.status + "');";
+
+                //sqlite_cmd.CommandText = "INSERT INTO 'Algo' (Symbol, Status) VALUES ('GNC','Queued');";
+
+                //Execute Command
+                sqlite_cmd.ExecuteNonQuery();
+
+
+
+            }
+            else
+            {
+                MessageBox.Show("Can not write to DB - Missing algo values");
+            }
+        }
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -283,9 +459,21 @@ namespace LiveAlgo
             DateTime startDateTime = new DateTime(runDate.Year, runDate.Month, runDate.Day, startTime.Hour, startTime.Minute, startTime.Second);
             DateTime endDateTime = new DateTime(runDate.Year, runDate.Month, runDate.Day, endTime.Hour, endTime.Minute, endTime.Second);
 
+            testAlgo.startTime = startDateTime;
+            testAlgo.endTime = endDateTime;
+
             System.Timers.Timer timeUntilStart = new System.Timers.Timer();
 
-            
+            testAlgo.bracketedOrders = Convert.ToInt32(numericUpDown4.Value);
+
+            decimal startPrice = Convert.ToDecimal(numericUpDown1.Value);  //Also midprice
+
+            testAlgo.symbol = textBox1.Text.ToUpper();
+            testAlgo.incrementPrice = numericUpDown8.Value;
+            testAlgo.incrementSize = Convert.ToInt32(numericUpDown10.Value);
+
+            testAlgo.autoBalance = Convert.ToInt32(numericUpDown2.Value);
+            testAlgo.hardStop = Convert.ToInt32(numericUpDown3.Value);
 
             TimeSpan ts = startDateTime - DateTime.Now;
             if (ts > new TimeSpan(0)) timeUntilStart.Interval = ts.TotalMilliseconds;
@@ -307,11 +495,7 @@ namespace LiveAlgo
                     }
                     
 
-                    decimal startPrice = Convert.ToDecimal(numericUpDown1.Value);  //Also midprice
-
-                    testAlgo.symbol = textBox1.Text.ToUpper();
-                    testAlgo.incrementPrice = numericUpDown8.Value;
-                    testAlgo.incrementSize = Convert.ToInt32(numericUpDown10.Value);
+                    
 
                     testAlgo.Start(startPrice);
 
@@ -325,8 +509,13 @@ namespace LiveAlgo
             timeUntilStart.Start();
 
             testAlgo.status = "Queued";
+
+            writeAlgoToDB();
+           
             label10.Text = "Queued";
             label10.Refresh();
+
+
 
         }
     }

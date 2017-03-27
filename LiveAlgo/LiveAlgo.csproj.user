@@ -8,5 +8,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <StartWorkingDirectory>C:\Users\Manifold\Desktop\LiveAlgo</StartWorkingDirectory>
+    <StartArguments>SQLITE_THREADSAFE=1</StartArguments>
   </PropertyGroup>
 </Project>

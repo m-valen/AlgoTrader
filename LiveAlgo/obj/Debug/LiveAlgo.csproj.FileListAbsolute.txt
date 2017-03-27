@@ -10,3 +10,4 @@ C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.csproj.GenerateRe
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.exe
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.pdb
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\Debug\Interop.SterlingLib.dll
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\Debug\LiveAlgo.AlgoForm.resources

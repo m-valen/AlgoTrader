@@ -28,6 +28,8 @@ namespace LiveAlgo
 
         private bool bModeXML = true;
 
+
+
         //[StructLayout(LayoutKind.Sequential)]
 
         public Form1()
@@ -65,12 +67,16 @@ namespace LiveAlgo
             SQLiteCommand sqlite_cmd;
             SQLiteDataReader sqlite_datareader;
 
+            
+
+
             //Create DB connection
             sqlite_conn = new SQLiteConnection("Data Source=database.db;Version=3;New=True;Compress=True;");
+            //sqlite_conn.
 
             //Open connection
             sqlite_conn.Open();
-
+            
             //Create a SQL command
             sqlite_cmd = sqlite_conn.CreateCommand();
 
@@ -108,7 +114,7 @@ namespace LiveAlgo
 
             //Get data reader object
             //sqlite_datareader = sqlite_cmd.ExecuteReader();
-
+            
 
             //Close & clean up connection
             sqlite_conn.Close();

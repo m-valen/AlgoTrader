@@ -29,6 +29,7 @@ namespace LiveAlgo
         public int incrementSize;
         public int autoBalance;
         public decimal hardStop;
+        public int bracketedOrders;
 
         //Status
         public int buyFills;
