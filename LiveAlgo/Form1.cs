@@ -159,5 +159,12 @@ namespace LiveAlgo
                 textBox1.Enabled = false;
             }
         }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            string serverTime = stiApp.GetServerTime();
+            SterlingLib.structSTIPositionUpdate positionStruct = stiPos.GetPositionInfoStruct("XOP", "E", Globals.account);
+
+        }
     }
 }

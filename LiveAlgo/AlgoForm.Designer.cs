@@ -223,7 +223,7 @@
             this.dateTimePicker6.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.dateTimePicker6.Location = new System.Drawing.Point(168, 104);
             this.dateTimePicker6.MaxDate = new System.DateTime(1753, 1, 1, 16, 0, 0, 0);
-            this.dateTimePicker6.MinDate = new System.DateTime(1753, 1, 1, 9, 30, 0, 0);
+            this.dateTimePicker6.MinDate = new System.DateTime(1753, 1, 1, 9, 0, 0, 0);
             this.dateTimePicker6.Name = "dateTimePicker6";
             this.dateTimePicker6.ShowUpDown = true;
             this.dateTimePicker6.Size = new System.Drawing.Size(85, 20);

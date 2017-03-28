@@ -7,6 +7,6 @@ C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.Properties.Re
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.csproj.GenerateResource.Cache
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.exe
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.pdb
-C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.csprojResolveAssemblyReference.cache
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\bin\x86\Debug\Interop.SterlingLib.dll
 C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.AlgoForm.resources
+C:\Users\Manifold\Desktop\LiveAlgo\LiveAlgo\obj\x86\Debug\LiveAlgo.csprojResolveAssemblyReference.cache

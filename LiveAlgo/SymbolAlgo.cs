@@ -50,6 +50,10 @@ namespace LiveAlgo
 
         public int currentPosition;
 
+        public int DB_ID;
+
+        private SterlingLib.ISTIOrderMaint orderMaint = new SterlingLib.STIOrderMaint();
+
         //Orders info, live management
         public List<SterlingLib.ISTIOrder> ordersAbove = new List<SterlingLib.ISTIOrder>();
 
@@ -141,6 +145,60 @@ namespace LiveAlgo
                 
                 }
             
+            }
+        }
+
+        public void stopAndCross()
+        {
+            foreach (SterlingLib.ISTIOrder order in ordersAbove)
+            {
+                orderMaint.CancelOrder(Globals.account, 0, order.ClOrderID, Guid.NewGuid().ToString());
+            }
+            foreach (SterlingLib.ISTIOrder order in ordersBelow)
+            {
+                orderMaint.CancelOrder(Globals.account, 0, order.ClOrderID, Guid.NewGuid().ToString());
+            }
+
+            status = "Stopped";
+
+            //Cross out.
+
+            int orderQuantity = 0;
+            string orderSide = "B";
+
+            if (currentPosition > 0)
+            {
+                orderQuantity = currentPosition;
+                orderSide = "S";
+            }
+            else if (currentPosition < 0)
+            {
+                orderQuantity = -(currentPosition);
+                orderSide = "B";
+            }
+            else
+            {
+                return;
+            }
+
+            SterlingLib.STIOrder stiOrder = new SterlingLib.STIOrder();
+            stiOrder.Symbol = symbol;
+            stiOrder.Account = Globals.account;
+            if (orderSide != null) stiOrder.Side = orderSide;
+            stiOrder.Quantity = orderQuantity;
+            stiOrder.Tif = "D"; //day order
+            stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTIMkt;
+            stiOrder.Destination = "BATS";
+            stiOrder.ClOrderID = Guid.NewGuid().ToString();
+
+            int orderStatus = stiOrder.SubmitOrder();
+            if (orderStatus != 0)
+            {
+                Debug.WriteLine("Order Error on Stop and Close Order: " + orderStatus.ToString());
+            }
+            else
+            {
+                //Success
             }
         }
 
