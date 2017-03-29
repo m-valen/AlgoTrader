@@ -222,7 +222,7 @@
             this.dateTimePicker6.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.dateTimePicker6.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.dateTimePicker6.Location = new System.Drawing.Point(168, 104);
-            this.dateTimePicker6.MaxDate = new System.DateTime(1753, 1, 1, 16, 0, 0, 0);
+            this.dateTimePicker6.MaxDate = new System.DateTime(2050, 1, 1, 16, 0, 0, 0);
             this.dateTimePicker6.MinDate = new System.DateTime(1753, 1, 1, 9, 0, 0, 0);
             this.dateTimePicker6.Name = "dateTimePicker6";
             this.dateTimePicker6.ShowUpDown = true;
@@ -235,7 +235,7 @@
             this.dateTimePicker7.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.dateTimePicker7.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.dateTimePicker7.Location = new System.Drawing.Point(296, 104);
-            this.dateTimePicker7.MaxDate = new System.DateTime(1753, 1, 1, 16, 0, 0, 0);
+            this.dateTimePicker7.MaxDate = new System.DateTime(2050, 1, 1, 16, 0, 0, 0);
             this.dateTimePicker7.MinDate = new System.DateTime(1753, 1, 1, 9, 30, 0, 0);
             this.dateTimePicker7.Name = "dateTimePicker7";
             this.dateTimePicker7.ShowUpDown = true;

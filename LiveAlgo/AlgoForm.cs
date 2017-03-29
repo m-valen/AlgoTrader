@@ -31,15 +31,15 @@ namespace LiveAlgo
 
         private SymbolAlgo testAlgo = new SymbolAlgo();
 
-        SQLiteConnection sqlite_conn;
-        SQLiteCommand sqlite_cmd;
-        SQLiteDataReader sqlite_datareader;
+        private SQLiteConnection sqlite_conn;
+        private SQLiteCommand sqlite_cmd;
+        private SQLiteDataReader sqlite_datareader;
 
 
         private string connectionString = "Data Source=database.db;Version=3;New=True;Compress=True;";
 
 
-
+        private bool preLoad = false;
 
         public AlgoForm()
         {
@@ -57,6 +57,56 @@ namespace LiveAlgo
             //sqlite_conn.Open();
 
         }
+
+        //Load Queued algo
+        public AlgoForm(string _symbol, string _status, DateTime _startTime, DateTime _endTime, int _bracketedOrders, decimal _incrementPrice, int _incrementSize, int _autoBalance, int _hardStopPL)
+        {
+            preLoad = true;
+
+            SymbolAlgo testAlgo = new SymbolAlgo();
+            testAlgo.symbol = _symbol;
+            testAlgo.status = _status;
+            testAlgo.startTime = _startTime;
+            testAlgo.endTime = _endTime;
+            testAlgo.bracketedOrders = _bracketedOrders;
+            testAlgo.incrementPrice = _incrementPrice;
+            testAlgo.incrementSize = _incrementSize;
+            testAlgo.autoBalance = _autoBalance;
+            testAlgo.hardStop = _hardStopPL;
+
+            InitializeComponent();
+            stiApp.SetModeXML(true);
+            stiEvents.SetOrderEventsAsStructs(true);
+            stiEvents.OnSTIOrderUpdateXML += new SterlingLib._ISTIEventsEvents_OnSTIOrderUpdateXMLEventHandler(OnSTIOrderUpdateXML);
+
+            dateTimePicker1.Value = DateTime.Now;
+
+            textBox1.Text = testAlgo.symbol;
+            dateTimePicker1.Value = testAlgo.startTime;
+            dateTimePicker6.Value = testAlgo.startTime;
+            dateTimePicker7.Value = testAlgo.endTime;
+            numericUpDown4.Value = testAlgo.bracketedOrders;
+            numericUpDown8.Value = testAlgo.incrementPrice;
+            numericUpDown10.Value = testAlgo.incrementSize;
+            numericUpDown2.Value = testAlgo.autoBalance;
+            numericUpDown3.Value = testAlgo.hardStop;
+
+
+            //Until Data Feed is implemented
+
+            numericUpDown1.Value = 7.00M;
+
+            //QueueAlgo();
+        }
+
+        private void AlgoForm_Load(object sender, System.EventArgs e)
+        {
+            if (preLoad)
+            {
+                QueueAlgo();
+            }
+        }
+
 
         private void OnSTIOrderUpdateXML(ref string strOrder)
         {
@@ -437,7 +487,7 @@ namespace LiveAlgo
                 testAlgo.incrementSize != null && testAlgo.autoBalance != null && testAlgo.hardStop != null) {
 
                 string queryString = "INSERT INTO Algo (Symbol, Status, StartTime, EndTime, BracketedOrders, IncrementPrice, IncrementSize, Autobalance, HardStopPL) VALUES ('" + testAlgo.symbol +
-                    "','" + testAlgo.status + "','" + testAlgo.startTime.ToString("yyyy-MM-dd HH:MM:ss.ff") + "','" + testAlgo.endTime.ToString("yyyy-MM-dd HH:MM:ss.ff") + "','" +
+                    "','" + testAlgo.status + "','" + testAlgo.startTime.ToString("yyyy-MM-dd HH:mm:ss.ff") + "','" + testAlgo.endTime.ToString("yyyy-MM-dd HH:mm:ss.ff") + "','" +
                     testAlgo.bracketedOrders + "','" + testAlgo.incrementPrice + "','" + testAlgo.incrementSize + "','" + testAlgo.autoBalance + "','" +
                     testAlgo.hardStop + "');";
 
@@ -466,6 +516,8 @@ namespace LiveAlgo
                 MessageBox.Show("Can not write to DB - Missing algo values");
             }
         }
+
+        
 
         private void updateAlgoStatusDB(string status)
         {
@@ -552,6 +604,11 @@ namespace LiveAlgo
 
         private void button3_Click(object sender, EventArgs e)
         {
+            QueueAlgo();
+        }
+
+        private void QueueAlgo()
+        {
             //Get Date
             DateTime runDate = dateTimePicker1.Value;
             DateTime startTime = dateTimePicker6.Value;
@@ -598,7 +655,8 @@ namespace LiveAlgo
                 if (testAlgo.status == "Queued")
                 {
                     testAlgo.status = "Running";
-                    if (this.label10.InvokeRequired) {
+                    if (this.label10.InvokeRequired)
+                    {
                         this.label10.BeginInvoke((MethodInvoker)delegate () { this.label10.Text = "Running"; this.label10.Refresh(); });
                     }
                     else
@@ -606,9 +664,9 @@ namespace LiveAlgo
                         label10.Text = "Running";
                         label10.Refresh();
                     }
-                    
 
-                    
+
+
 
                     testAlgo.Start(startPrice);
 
@@ -651,15 +709,16 @@ namespace LiveAlgo
             testAlgo.status = "Queued";
 
             writeAlgoToDB();
-           
+
             label10.Text = "Queued";
             label10.Refresh();
 
-            
+
 
 
 
         }
+
         private void ExecuteNonQuery(string queryString)
         {
             using (var connection = new SQLiteConnection(

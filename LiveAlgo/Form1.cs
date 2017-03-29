@@ -28,7 +28,11 @@ namespace LiveAlgo
 
         private bool bModeXML = true;
 
+        private SQLiteConnection sqlite_conn;
+        private SQLiteCommand sqlite_cmd;
+        private SQLiteDataReader sqlite_datareader;
 
+        private string connectionString = "Data Source=database.db;Version=3;New=True;Compress=True;";
 
         //[StructLayout(LayoutKind.Sequential)]
 
@@ -43,6 +47,8 @@ namespace LiveAlgo
             //Set globals from settings file
             Globals.account = Properties.Settings.Default.SterlingAccount;
             textBox1.Text = Globals.account;
+
+            
 
         }
 
@@ -63,61 +69,32 @@ namespace LiveAlgo
 
         private void button1_Click(object sender, EventArgs e)
         {
-            SQLiteConnection sqlite_conn;
-            SQLiteCommand sqlite_cmd;
-            SQLiteDataReader sqlite_datareader;
-
-            
-
-
-            //Create DB connection
-            sqlite_conn = new SQLiteConnection("Data Source=database.db;Version=3;New=True;Compress=True;");
-            //sqlite_conn.
-
-            //Open connection
-            sqlite_conn.Open();
-            
-            //Create a SQL command
-            sqlite_cmd = sqlite_conn.CreateCommand();
-
-
-
-            //Give SQL Query to Command
-            sqlite_cmd.CommandText = "CREATE TABLE test (id integer primary key, text varchar(100));";
-
-            //Execute Command
-            sqlite_cmd.ExecuteNonQuery();
-
-
-            //Insert command
-            sqlite_cmd.CommandText = "INSERT INTO test (id, text) VALUES (1, 'Text Text 1');";
-
-            sqlite_cmd.ExecuteNonQuery();
-
-            sqlite_cmd.CommandText = "INSERT INTO test (id, text) VALUES (2, 'Test Text 2');";
-
-            sqlite_cmd.ExecuteNonQuery();
-            //Read from table
-            string stm = "SELECT * FROM test";
-
-            using (SQLiteCommand cmd = new SQLiteCommand(stm,sqlite_conn))
+            using (SQLiteConnection conn = new SQLiteConnection("Data Source=database.db;Version=3;New=True;Compress=True;") )
             {
-                using (SQLiteDataReader rdr = cmd.ExecuteReader())
+                conn.Open();
+
+                string stm = "SELECT * FROM Algo WHERE Status='Queued'";
+
+                using (SQLiteCommand cmd = new SQLiteCommand(stm, conn))
                 {
-                    while (rdr.Read())
+                    using (SQLiteDataReader rdr = cmd.ExecuteReader())
                     {
-                        Debug.WriteLine(rdr.GetString(1));
-                        var a = rdr.GetString(1);
+                        while (rdr.Read())
+                        {
+                            if (DateTime.ParseExact(rdr.GetString(3), "yyyy-MM-dd HH:mm:ss.ff", null) > DateTime.ParseExact(stiApp.GetServerTime(), "yyyyMMddHHmmss", null)) { 
+                                Debug.WriteLine("---------------------");
+                                Debug.WriteLine(rdr.GetString(1) + " : " + rdr.GetString(2) + " : " + rdr.GetString(3));
+
+                                AlgoForm af = new AlgoForm(rdr.GetString(1), rdr.GetString(2), DateTime.ParseExact(rdr.GetString(3), "yyyy-MM-dd HH:mm:ss.ff", null), DateTime.ParseExact(rdr.GetString(4), "yyyy-MM-dd HH:mm:ss.ff", null), 
+                                    rdr.GetInt32(5), rdr.GetDecimal(6), rdr.GetInt32(7), rdr.GetInt32(10), rdr.GetInt32(11));
+                                af.Show();
+                            }   
+                        }
                     }
                 }
+
+                conn.Close();
             }
-
-            //Get data reader object
-            //sqlite_datareader = sqlite_cmd.ExecuteReader();
-            
-
-            //Close & clean up connection
-            sqlite_conn.Close();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -126,22 +103,7 @@ namespace LiveAlgo
             af.Show();
         }
 
-        private void button3_Click(object sender, EventArgs e)
-        {
-            SterlingLib.STIOrder stiOrder = new SterlingLib.STIOrder();
-            stiOrder.Symbol = "XOP";
-            stiOrder.Account = Globals.account;
-            stiOrder.Side = "B";
-            stiOrder.Quantity = 100;
-            stiOrder.Tif = "D"; //day order
-            stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
-            stiOrder.LmtPrice = Convert.ToDouble(36.00);
-            stiOrder.Destination = "BATS";
-            stiOrder.ClOrderID = Guid.NewGuid().ToString();
-            int order = stiOrder.SubmitOrder();
 
-
-        }
 
         private void button4_Click(object sender, EventArgs e)
         {
@@ -165,6 +127,19 @@ namespace LiveAlgo
             string serverTime = stiApp.GetServerTime();
             SterlingLib.structSTIPositionUpdate positionStruct = stiPos.GetPositionInfoStruct("XOP", "E", Globals.account);
 
+        }
+
+        private void ExecuteNonQuery(string queryString)
+        {
+            using (var connection = new SQLiteConnection(
+                       connectionString))
+            {
+                using (var command = new SQLiteCommand(queryString, connection))
+                {
+                    command.Connection.Open();
+                    command.ExecuteNonQuery();
+                }
+            }
         }
     }
 }
