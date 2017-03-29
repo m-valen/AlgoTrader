@@ -74,6 +74,16 @@ namespace LiveAlgo
                 {
                     testAlgo.buyFills++;
 
+                    //Calculate priceMovePL
+
+                    if (testAlgo.currentPosition > 0) testAlgo.priceMovePL -= testAlgo.currentPosition * testAlgo.incrementPrice;
+                    else if (testAlgo.currentPosition < 0)
+                    {
+                        testAlgo.priceMovePL -= (testAlgo.currentPosition + testAlgo.incrementSize) * testAlgo.incrementPrice;
+                    }
+
+
+
                     //Shift orders
                     //Normal behaviour, if lists are full
                     if (testAlgo.ordersAbove.Count == 5 && testAlgo.ordersBelow.Count == 5)
@@ -86,7 +96,22 @@ namespace LiveAlgo
                             testAlgo.incrementPL += testAlgo.incrementPrice * testAlgo.incrementSize;
                         }
 
-                        testAlgo.currentPosition += structOrder.nQuantity;  //Update position
+                        //Update TotalPL
+
+                        testAlgo.totalPL = testAlgo.incrementPL + testAlgo.priceMovePL;
+
+                        //Update position
+
+                        testAlgo.currentPosition += structOrder.nQuantity;
+
+                        //Hard Stop Check
+
+                        if (-(testAlgo.totalPL) >= testAlgo.hardStop  ) {  
+                            testAlgo.stopAndCross();
+                            updateAlgoStatusDB("Stopped");
+                            return;
+                        }
+
 
                         //Move filled order to completed list, remove from active list
                         SterlingLib.ISTIOrder filledOrder = testAlgo.ordersAbove.Find(i => i.ClOrderID == structOrder.bstrClOrderId);
@@ -176,7 +201,7 @@ namespace LiveAlgo
                                         stiOrder.Quantity = testAlgo.incrementSize;
                                         stiOrder.Tif = "D"; //day order
                                         stiOrder.PriceType = SterlingLib.STIPriceTypes.ptSTILmt;
-                                        stiOrder.LmtPrice = testAlgo.incrementSize;
+                                        stiOrder.LmtPrice = testAlgo.ordersAbove[i].LmtPrice;
                                         stiOrder.Destination = "BATS";
                                         stiOrder.ClOrderID = Guid.NewGuid().ToString();
 
@@ -215,6 +240,8 @@ namespace LiveAlgo
                     Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
                     Debug.WriteLine("Current Position: " + testAlgo.currentPosition);
                     Debug.WriteLine("Increment PL: " + testAlgo.incrementPL);
+                    Debug.WriteLine("Price Move PL: " + testAlgo.priceMovePL);
+                    Debug.WriteLine("Total PL: " + testAlgo.totalPL);
                     Debug.WriteLine("--------------");
                     Debug.WriteLine("--------------");
 
@@ -222,6 +249,15 @@ namespace LiveAlgo
                 else if (Convert.ToDecimal(structOrder.fLmtPrice) > testAlgo.midPrice)
                 {
                     testAlgo.sellFills++;
+
+                    //Calculate priceMovePL
+
+                    if (testAlgo.currentPosition < 0) testAlgo.priceMovePL += testAlgo.currentPosition * testAlgo.incrementPrice;
+                    else if (testAlgo.currentPosition > 0)
+                    {
+                        testAlgo.priceMovePL += (testAlgo.currentPosition - testAlgo.incrementSize) * testAlgo.incrementPrice;
+                    }
+
 
                     //Shift orders
                     //Normal behaviour, if lists are full
@@ -236,7 +272,19 @@ namespace LiveAlgo
                         }
                         testAlgo.currentPosition -= structOrder.nQuantity; //Update position
 
+                        //Update TotalPL
 
+                        testAlgo.totalPL = testAlgo.incrementPL + testAlgo.priceMovePL;
+
+
+                        //Hard Stop Check
+
+                        if (-(testAlgo.totalPL) >= testAlgo.hardStop)
+                        {
+                            testAlgo.stopAndCross();
+                            updateAlgoStatusDB("Stopped");
+                            return;
+                        }
 
                         //Move filled order to completed list, remove from active list
                         SterlingLib.ISTIOrder filledOrder = testAlgo.ordersAbove.Find(i => i.ClOrderID == structOrder.bstrClOrderId);
@@ -369,6 +417,8 @@ namespace LiveAlgo
                     Debug.WriteLine("Sell Fills: " + testAlgo.sellFills);
                     Debug.WriteLine("Current Position: " + testAlgo.currentPosition);
                     Debug.WriteLine("Increment PL: " + testAlgo.incrementPL);
+                    Debug.WriteLine("Price Move PL: " + testAlgo.priceMovePL);
+                    Debug.WriteLine("Total PL: " + testAlgo.totalPL);
                     Debug.WriteLine("--------------");
                     Debug.WriteLine("--------------");
 
@@ -527,8 +577,14 @@ namespace LiveAlgo
             testAlgo.autoBalance = Convert.ToInt32(numericUpDown2.Value);
             testAlgo.hardStop = Convert.ToInt32(numericUpDown3.Value);
 
-            TimeSpan ts = startDateTime - DateTime.Now;
-            TimeSpan ets = endDateTime - DateTime.Now;
+            string strServerTime = stiApp.GetServerTime();
+
+            DateTime SterlingServerTime = DateTime.ParseExact(strServerTime, "yyyyMMddHHmmss", null);
+
+            TimeSpan ts = startDateTime - SterlingServerTime;
+            TimeSpan ets = endDateTime - SterlingServerTime;
+
+
 
             if (ts > new TimeSpan(0)) timeUntilStart.Interval = ts.TotalMilliseconds;
             else { MessageBox.Show("Start Time must be later than current time."); return; }

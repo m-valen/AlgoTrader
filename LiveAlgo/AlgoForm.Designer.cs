@@ -330,7 +330,6 @@
             // 
             // numericUpDown3
             // 
-            this.numericUpDown3.Enabled = false;
             this.numericUpDown3.Increment = new decimal(new int[] {
             10,
             0,
@@ -343,7 +342,7 @@
             0,
             0});
             this.numericUpDown3.Minimum = new decimal(new int[] {
-            100,
+            1,
             0,
             0,
             0});
